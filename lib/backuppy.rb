@@ -23,7 +23,15 @@ module Backuppy
 
       loop do
         # Get all the mails
-        emails = Mail.all
+        begin
+          emails = Mail.all
+        rescue => e
+          Backuppy.logger.warn "Could not fetch mails: #{e}"
+
+          # When mail server is not responding - act like we did not get
+          # any mails
+          emails = []
+        end
 
         if emails.length > 0
 
@@ -48,7 +56,7 @@ module Backuppy
               filename = "#{ENV['BACKUP_DIR']}/#{attachment.filename}"
               begin
                 File.open(filename, 'w+b', 0644) do |f|
-                  Backuppy.logger.info "Writing #{filename} to #{'BACKUP_DIR'}"
+                  Backuppy.logger.info "Writing #{filename} to disk"
                   f.write attachment.decoded
                 end
               rescue => e
